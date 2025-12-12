@@ -1,16 +1,26 @@
 // src/pages/.../Stations.tsx
-import { useEffect, useState } from "react";
-import Button from "../../components/common/Button";
-import Modal from "../../components/common/Modal";
-import Input from "../../components/common/Input";
-import CheckboxTile from "../../components/common/CheckboxTile";
-import DashboardLayout from "../../layouts/DashboardLayout";
-import Meta from "../../utils/Meta";
+import { useEffect, useState } from 'react';
+import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
+import Input from '../../components/common/Input';
+import CheckboxTile from '../../components/common/CheckboxTile';
+import DashboardLayout from '../../layouts/DashboardLayout';
+import Meta from '../../utils/Meta';
 import {
-  getAllStations, getStationGuards, updateStationGuards,
-  updateStation, type Station, type AssignedUser as StationAssignedUser,
-  getAllUsers, type UserAccount, createStation, setStationActive,
-} from "../../api/Index";
+  getAllStations,
+  getStationGuards,
+  updateStationGuards,
+  updateStation,
+  type Station,
+  type AssignedUser as StationAssignedUser,
+  getAllUsers,
+  type UserAccount,
+  createStation,
+  setStationActive,
+} from '../../api/Index';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDungeon } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding as farBuilding } from '@fortawesome/free-regular-svg-icons';
 
 type StationWithUsers = Station & {
   assignedUsers?: StationAssignedUser[];
@@ -18,13 +28,11 @@ type StationWithUsers = Station & {
 };
 
 export default function Stations() {
-  Meta({ title: "Stations - iVisit" });
+  Meta({ title: 'Stations - iVisit' });
 
-  const [currentType, setCurrentType] = useState<"gate" | "building">("gate");
+  const [currentType, setCurrentType] = useState<'gate' | 'building'>('gate');
   const [stations, setStations] = useState<StationWithUsers[]>([]);
-  const [selectedStationId, setSelectedStationId] = useState<number | null>(
-    null
-  );
+  const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,22 +45,20 @@ export default function Stations() {
 
   // add/deactivate station state
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createName, setCreateName] = useState("");
-  const [createType, setCreateType] = useState<"gate" | "building">("gate");
+  const [createName, setCreateName] = useState('');
+  const [createType, setCreateType] = useState<'gate' | 'building'>('gate');
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [showInactive, setShowInactive] = useState(false);
 
   // edit station state
   const [renameModalOpen, setRenameModalOpen] = useState(false);
-  const [renameName, setRenameName] = useState("");
-  const [renameType, setRenameType] = useState<"gate" | "building">("gate");
+  const [renameName, setRenameName] = useState('');
+  const [renameType, setRenameType] = useState<'gate' | 'building'>('gate');
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renameSubmitting, setRenameSubmitting] = useState(false);
 
-  const selectedStation: StationWithUsers | null = selectedStationId
-    ? stations.find((s) => s.id === selectedStationId) || null
-    : null;
+  const selectedStation: StationWithUsers | null = selectedStationId ? stations.find((s) => s.id === selectedStationId) || null : null;
 
   // Load stations + all guards on mount
   useEffect(() => {
@@ -61,27 +67,19 @@ export default function Stations() {
     const fetchStationsAndGuards = async () => {
       try {
         setLoading(true);
-        const [stationsData, usersData] = await Promise.all([
-          getAllStations(),
-          getAllUsers(),
-        ]);
+        const [stationsData, usersData] = await Promise.all([getAllStations(), getAllUsers()]);
 
         if (!cancelled) {
-          const normalizedStations: StationWithUsers[] = stationsData.map(
-            (s) => ({
-              ...s,
-              active: s.active ?? true,
-              stationType: s.stationType ?? null,
-            })
-          );
+          const normalizedStations: StationWithUsers[] = stationsData.map((s) => ({
+            ...s,
+            active: s.active ?? true,
+            stationType: s.stationType ?? null,
+          }));
 
           setStations(normalizedStations);
 
           const guards: StationAssignedUser[] = usersData
-            .filter(
-              (u: UserAccount) =>
-                (u.accountType || "").toUpperCase() === "GUARD"
-            )
+            .filter((u: UserAccount) => (u.accountType || '').toUpperCase() === 'GUARD')
             .map((u) => ({
               id: u.accountID,
               username: u.username,
@@ -94,7 +92,7 @@ export default function Stations() {
       } catch (err: any) {
         if (!cancelled) {
           console.error(err);
-          setError(err?.message || "Failed to load stations or guards");
+          setError(err?.message || 'Failed to load stations or guards');
         }
       } finally {
         if (!cancelled) {
@@ -130,7 +128,7 @@ export default function Stations() {
       } catch (err: any) {
         if (!cancelled) {
           console.error(err);
-          setError(err?.message || "Failed to load guards for station");
+          setError(err?.message || 'Failed to load guards for station');
         }
       } finally {
         if (!cancelled) {
@@ -147,21 +145,21 @@ export default function Stations() {
 
   // Filter stations by type + active flag
   const filteredStations = stations.filter((s) => {
-    const rawType = (s.stationType || "").toLowerCase();
-    const name = (s.name || "").toLowerCase();
+    const rawType = (s.stationType || '').toLowerCase();
+    const name = (s.name || '').toLowerCase();
 
     let matchesType = false;
 
-    if (rawType === "gate" || rawType === "building") {
+    if (rawType === 'gate' || rawType === 'building') {
       matchesType = rawType === currentType;
     } else {
       // Legacy / broken rows with no type – fall back to name or show them so you can fix
       if (!name) {
         matchesType = true; // show in both tabs to allow renaming
-      } else if (currentType === "gate") {
-        matchesType = name.includes("gate");
+      } else if (currentType === 'gate') {
+        matchesType = name.includes('gate');
       } else {
-        matchesType = !name.includes("gate");
+        matchesType = !name.includes('gate');
       }
     }
 
@@ -176,36 +174,27 @@ export default function Stations() {
 
   const handleToggleStationActive = async (station: StationWithUsers) => {
     const newActive = station.active === false ? true : false;
-    const actionLabel = newActive ? "reactivate" : "deactivate";
+    const actionLabel = newActive ? 'reactivate' : 'deactivate';
 
-    const ok = window.confirm(
-      `Are you sure you want to ${actionLabel} "${station.name || `station #${station.id}`
-      }"?`
-    );
+    const ok = window.confirm(`Are you sure you want to ${actionLabel} "${station.name || `station #${station.id}`}"?`);
     if (!ok) return;
 
     try {
       const updated = await setStationActive(station.id, newActive);
 
-      setStations((prev) =>
-        prev.map((s) => (s.id === station.id ? { ...s, ...updated } : s))
-      );
+      setStations((prev) => prev.map((s) => (s.id === station.id ? { ...s, ...updated } : s)));
 
       if (!updated.active && !showInactive && selectedStationId === station.id) {
         setSelectedStationId(null);
       }
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Failed to update station status");
+      setError(err?.message || 'Failed to update station status');
     }
   };
 
   const handleToggleGuardSelection = (guardId: number) => {
-    setSelectedGuardIds((prev) =>
-      prev.includes(guardId)
-        ? prev.filter((id) => id !== guardId)
-        : [...prev, guardId]
-    );
+    setSelectedGuardIds((prev) => (prev.includes(guardId) ? prev.filter((id) => id !== guardId) : [...prev, guardId]));
   };
 
   const handleSaveAssignments = async () => {
@@ -218,14 +207,14 @@ export default function Stations() {
       setAssignModalOpen(false);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Failed to update station guards");
+      setError(err?.message || 'Failed to update station guards');
     }
   };
 
   // ---------- Add Station ----------
 
   const openCreateModal = () => {
-    setCreateName("");
+    setCreateName('');
     setCreateType(currentType);
     setCreateError(null);
     setCreateModalOpen(true);
@@ -236,20 +225,18 @@ export default function Stations() {
     const rawName = createName.trim();
 
     if (!rawName) {
-      setCreateError("Please enter a station name.");
+      setCreateError('Please enter a station name.');
       return;
     }
 
-    const exists = stations.some(
-      (s) => (s.name || "").toLowerCase() === rawName.toLowerCase()
-    );
+    const exists = stations.some((s) => (s.name || '').toLowerCase() === rawName.toLowerCase());
     if (exists) {
-      setCreateError("A station with that name already exists.");
+      setCreateError('A station with that name already exists.');
       return;
     }
 
     let finalName = rawName;
-    if (createType === "gate" && !rawName.toLowerCase().includes("gate")) {
+    if (createType === 'gate' && !rawName.toLowerCase().includes('gate')) {
       finalName = `Gate ${rawName}`;
     }
 
@@ -272,7 +259,7 @@ export default function Stations() {
       setCreateModalOpen(false);
     } catch (err: any) {
       console.error(err);
-      setCreateError(err?.message || "Failed to create station.");
+      setCreateError(err?.message || 'Failed to create station.');
     } finally {
       setCreateSubmitting(false);
     }
@@ -283,11 +270,11 @@ export default function Stations() {
   const openRenameModal = () => {
     if (!selectedStation) return;
 
-    setRenameName(selectedStation.name || "");
+    setRenameName(selectedStation.name || '');
 
-    const rawType = (selectedStation.stationType || "").toLowerCase();
-    if (rawType === "gate" || rawType === "building") {
-      setRenameType(rawType as "gate" | "building");
+    const rawType = (selectedStation.stationType || '').toLowerCase();
+    if (rawType === 'gate' || rawType === 'building') {
+      setRenameType(rawType as 'gate' | 'building');
     } else {
       setRenameType(currentType);
     }
@@ -301,12 +288,12 @@ export default function Stations() {
 
     const rawName = renameName.trim();
     if (!rawName) {
-      setRenameError("Please enter a station name.");
+      setRenameError('Please enter a station name.');
       return;
     }
 
     let finalName = rawName;
-    if (renameType === "gate" && !rawName.toLowerCase().includes("gate")) {
+    if (renameType === 'gate' && !rawName.toLowerCase().includes('gate')) {
       finalName = `Gate ${rawName}`;
     }
 
@@ -326,15 +313,11 @@ export default function Stations() {
         prev.map((s) =>
           s.id === selectedStation.id
             ? {
-              ...s,
-              ...updated,
-              active: updated.active ?? s.active ?? true,
-              stationType:
-                updated.stationType ??
-                stationTypeValue ??
-                s.stationType ??
-                null,
-            }
+                ...s,
+                ...updated,
+                active: updated.active ?? s.active ?? true,
+                stationType: updated.stationType ?? stationTypeValue ?? s.stationType ?? null,
+              }
             : s
         )
       );
@@ -342,7 +325,7 @@ export default function Stations() {
       setRenameModalOpen(false);
     } catch (err: any) {
       console.error(err);
-      setRenameError(err?.message || "Failed to rename station.");
+      setRenameError(err?.message || 'Failed to rename station.');
     } finally {
       setRenameSubmitting(false);
     }
@@ -351,185 +334,132 @@ export default function Stations() {
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between mb-4 gap-4">
-  <p className="text-xl font-semibold">Stations</p>
+        <p className="text-xl font-semibold">Stations</p>
 
-  <div className="flex flex-wrap items-center gap-3">
-    <div className="space-x-2">
-      <Button
-        className="text-white"
-        onClick={() => setCurrentType("gate")}
-        variation={currentType === "gate" ? "primary" : "secondary"}
-      >
-        Gates
-      </Button>
-      <Button
-        className="text-white"
-        onClick={() => setCurrentType("building")}
-        variation={currentType === "building" ? "primary" : "secondary"}
-      >
-        Buildings
-      </Button>
-    </div>
-    <CheckboxTile
-      checked={showInactive}
-      onChange={setShowInactive}
-      label="Show deactivated"
-      className="text-sm"
-    />
-    <Button
-      type="button"
-      variation="primary"
-      className="whitespace-nowrap"
-      onClick={openCreateModal}
-    >
-      Add Station
-    </Button>
-  </div>
-</div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="space-x-2">
+            <Button className="text-white" onClick={() => setCurrentType('gate')} variation={currentType === 'gate' ? 'primary' : 'secondary'}>
+              Gates
+            </Button>
+            <Button className="text-white" onClick={() => setCurrentType('building')} variation={currentType === 'building' ? 'primary' : 'secondary'}>
+              Buildings
+            </Button>
+          </div>
+          <CheckboxTile checked={showInactive} onChange={setShowInactive} label="Show deactivated" className="text-sm" />
+          <Button type="button" variation="primary" className="whitespace-nowrap" onClick={openCreateModal}>
+            Add Station
+          </Button>
+        </div>
+      </div>
 
       <div className="flex gap-4 h-full min-h-0">
-  {/* LEFT: Station list */}
-  <div className="w-80 flex-shrink-0 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-    {loading && <p>Loading stations...</p>}
+        {/* LEFT: Station list */}
+        <div className="w-80 flex-shrink-0 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+          {loading && <p>Loading stations...</p>}
 
-    {!loading && error && (
-      <p className="text-red-500 text-sm">{error}</p>
-    )}
+          {!loading && error && <p className="text-red-500 text-sm">{error}</p>}
 
-    {!loading && !error && filteredStations.length === 0 && (
-      <p className="text-sm text-slate-500">
-        No stations found for this category.
-      </p>
-    )}
+          {!loading && !error && filteredStations.length === 0 && <p className="text-sm text-slate-500">No stations found for this category.</p>}
 
-    {!loading && !error && filteredStations.length > 0 && (
-      <>
-        {filteredStations.map((station) => {
-          const isActive = station.active !== false;
+          {!loading && !error && filteredStations.length > 0 && (
+            <>
+              {filteredStations.map((station) => {
+                const isActive = station.active !== false;
 
-          return (
-            <div
-              key={station.id}
-              className={`flex items-center justify-between w-full p-2 rounded border-2 ${
-                selectedStationId === station.id
-                  ? "bg-yellow-500 border-yellow-300"
-                  : "bg-yellow-600 border-yellow-300/40"
-              }`}
-            >
-              <button
-                onClick={() => setSelectedStationId(station.id)}
-                className="flex-1 text-left text-lg"
-              >
-                {station.name || `Unnamed station #${station.id}`}
-                {!isActive && (
-                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-500/80 text-white">
-                    Inactive
-                  </span>
-                )}
-              </button>
+                return (
+                  <div
+                    key={station.id}
+                    className={`flex items-center justify-between w-full p-2 rounded border-2 ${
+                      selectedStationId === station.id ? 'bg-yellow-500 border-yellow-300' : 'bg-yellow-600 border-yellow-300/40'
+                    }`}
+                  >
+                    <button onClick={() => setSelectedStationId(station.id)} className="flex-1 text-left text-lg">
+                      <span className="inline-flex items-center gap-2">
+                        {(() => {
+                          const t = (station.stationType || '').toLowerCase();
+                          const looksLikeGate = (station.name || '').toLowerCase().includes('gate');
+                          const icon = t === 'gate' || (!t && looksLikeGate) ? faDungeon : farBuilding;
+                          return <FontAwesomeIcon icon={icon} fixedWidth />;
+                        })()}
+                        <span>{station.name || `Unnamed station #${station.id}`}</span>
+                      </span>
+                      {!isActive && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-500/80 text-white">Inactive</span>}
+                    </button>
 
-              <Button
-                variation={isActive ? "secondary" : "primary"}
-                className="ml-2 text-xs px-2 py-1"
-                onClick={() => handleToggleStationActive(station)}
-              >
-                {isActive ? "Deactivate" : "Reactivate"}
-              </Button>
-            </div>
-          );
-        })}
-      </>
-    )}
-  </div>
-
-  {/* RIGHT: Station details */}
-  <div className="flex-1 flex flex-col p-3 rounded border-2 overflow-y-auto custom-scrollbar">
-    {selectedStation ? (
-      <>
-        <div className="flex justify-between items-center mb-3">
-          <h1 className="text-2xl">
-            Personnels –{" "}
-            {selectedStation.name ||
-              `Unnamed station #${selectedStation.id}`}
-          </h1>
-          <div className="flex gap-2 items-center">
-            <Button
-              variation="secondary"
-              onClick={() => setAssignModalOpen(true)}
-            >
-              Assign...
-            </Button>
-            <Button variation="secondary" onClick={openRenameModal}>
-              Edit
-            </Button>
-            <Button
-              onClick={() => setSelectedStationId(null)}
-              className="text-sm"
-            >
-              Close
-            </Button>
-          </div>
+                    <Button variation={isActive ? 'secondary' : 'primary'} className="ml-2 text-xs px-2 py-1" onClick={() => handleToggleStationActive(station)}>
+                      {isActive ? 'Deactivate' : 'Reactivate'}
+                    </Button>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
-        {guardsLoading ? (
-          <p className="text-sm text-slate-500">Loading guards...</p>
-        ) : assignedUsers.length > 0 ? (
-          <div className="space-y-1">
-            {assignedUsers.map((u) => (
-              <p key={u.id}>
-                {u.username}{" "}
-                <span className="text-xs text-slate-500">
-                  ({u.accountType})
-                </span>
-              </p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">
-            No guards assigned to this station yet.
-          </p>
-        )}
-      </>
-    ) : (
-      <div className="flex-1 flex items-center justify-center text-sm text-slate-500">
-        Select a station from the left to view details.
+        {/* RIGHT: Station details */}
+        <div className="flex-1 flex flex-col p-3 rounded border-2 overflow-y-auto custom-scrollbar">
+          {selectedStation ? (
+            <>
+              <div className="flex justify-between items-center mb-3">
+                <h1 className="text-2xl">
+                  Personnels –{' '}
+                  <span className="inline-flex items-center gap-2">
+                    {(() => {
+                      const t = (selectedStation.stationType || '').toLowerCase();
+                      const looksLikeGate = (selectedStation.name || '').toLowerCase().includes('gate');
+                      const icon = t === 'gate' || (!t && looksLikeGate) ? faDungeon : farBuilding;
+                      return <FontAwesomeIcon icon={icon} fixedWidth />;
+                    })()}
+                    <span>{selectedStation.name || `Unnamed station #${selectedStation.id}`}</span>
+                  </span>
+                </h1>
+                <div className="flex gap-2 items-center">
+                  <Button variation="secondary" onClick={() => setAssignModalOpen(true)}>
+                    Assign...
+                  </Button>
+                  <Button variation="secondary" onClick={openRenameModal}>
+                    Edit
+                  </Button>
+                  <Button onClick={() => setSelectedStationId(null)} className="text-sm">
+                    Close
+                  </Button>
+                </div>
+              </div>
+
+              {guardsLoading ? (
+                <p className="text-sm text-slate-500">Loading guards...</p>
+              ) : assignedUsers.length > 0 ? (
+                <div className="space-y-1">
+                  {assignedUsers.map((u) => (
+                    <p key={u.id}>
+                      {u.username} <span className="text-xs text-slate-500">({u.accountType})</span>
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No guards assigned to this station yet.</p>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-sm text-slate-500">Select a station from the left to view details.</div>
+          )}
+        </div>
       </div>
-    )}
-  </div>
-</div>
 
       {/* Assign Guards modal */}
-      <Modal
-        isOpen={assignModalOpen}
-        onClose={() => setAssignModalOpen(false)}
-        title="Assign Guards"
-      >
+      <Modal isOpen={assignModalOpen} onClose={() => setAssignModalOpen(false)} title="Assign Guards">
         <div className="flex flex-col gap-3 max-h-96 overflow-y-auto">
-          {allGuards.length === 0 && (
-            <p className="text-sm text-slate-500">
-              No guard accounts available.
-            </p>
-          )}
+          {allGuards.length === 0 && <p className="text-sm text-slate-500">No guard accounts available.</p>}
 
           {allGuards.map((g) => (
-            <label
-              key={g.id}
-              className="flex items-center gap-2 text-sm text-white"
-            >
-              <CheckboxTile
-                checked={selectedGuardIds.includes(g.id)}
-                onChange={() => handleToggleGuardSelection(g.id)}
-                label={g.username}
-              />
+            <label key={g.id} className="flex items-center gap-2 text-sm text-white">
+              <CheckboxTile checked={selectedGuardIds.includes(g.id)} onChange={() => handleToggleGuardSelection(g.id)} label={g.username} />
             </label>
           ))}
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button
-            variation="secondary"
-            onClick={() => setAssignModalOpen(false)}
-          >
+          <Button variation="secondary" onClick={() => setAssignModalOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleSaveAssignments}>Save</Button>
@@ -537,142 +467,66 @@ export default function Stations() {
       </Modal>
 
       {/* Create Station modal */}
-      <Modal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        title="Add Station"
-      >
+      <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Add Station">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block mb-1 text-sm text-white/80">
-              Station Type
-            </label>
+            <label className="block mb-1 text-sm text-white/80">Station Type</label>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variation={createType === "gate" ? "primary" : "secondary"}
-                onClick={() => setCreateType("gate")}
-              >
+              <Button type="button" variation={createType === 'gate' ? 'primary' : 'secondary'} onClick={() => setCreateType('gate')}>
                 Gate
               </Button>
-              <Button
-                type="button"
-                variation={createType === "building" ? "primary" : "secondary"}
-                onClick={() => setCreateType("building")}
-              >
+              <Button type="button" variation={createType === 'building' ? 'primary' : 'secondary'} onClick={() => setCreateType('building')}>
                 Building
               </Button>
             </div>
           </div>
 
           <div>
-            <label className="block mb-1 text-sm text-white/80">
-              Station Name
-            </label>
-            <Input
-              className="w-full"
-              placeholder={
-                createType === "gate" ? "e.g. Gate 3" : "e.g. Main Lobby"
-              }
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-            />
-            <p className="text-xs text-white/60 mt-1">
-              For gates, names containing &quot;Gate&quot; will be treated as
-              entry/exit points in the system.
-            </p>
-            {createError && (
-              <p className="text-xs text-red-400 mt-1">{createError}</p>
-            )}
+            <label className="block mb-1 text-sm text-white/80">Station Name</label>
+            <Input className="w-full" placeholder={createType === 'gate' ? 'e.g. Gate 3' : 'e.g. Main Lobby'} value={createName} onChange={(e) => setCreateName(e.target.value)} />
+            <p className="text-xs text-white/60 mt-1">For gates, names containing &quot;Gate&quot; will be treated as entry/exit points in the system.</p>
+            {createError && <p className="text-xs text-red-400 mt-1">{createError}</p>}
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variation="secondary"
-              type="button"
-              onClick={() => setCreateModalOpen(false)}
-              disabled={createSubmitting}
-            >
+            <Button variation="secondary" type="button" onClick={() => setCreateModalOpen(false)} disabled={createSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={handleCreateStation}
-              disabled={createSubmitting}
-            >
-              {createSubmitting ? "Creating..." : "Create"}
+            <Button type="button" onClick={handleCreateStation} disabled={createSubmitting}>
+              {createSubmitting ? 'Creating...' : 'Create'}
             </Button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Station modal */}
-      <Modal
-        isOpen={renameModalOpen}
-        onClose={() => setRenameModalOpen(false)}
-        title="Edit Station"
-      >
+      <Modal isOpen={renameModalOpen} onClose={() => setRenameModalOpen(false)} title="Edit Station">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block mb-1 text-sm text-white/80">
-              Station Type
-            </label>
+            <label className="block mb-1 text-sm text-white/80">Station Type</label>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variation={renameType === "gate" ? "primary" : "secondary"}
-                onClick={() => setRenameType("gate")}
-              >
+              <Button type="button" variation={renameType === 'gate' ? 'primary' : 'secondary'} onClick={() => setRenameType('gate')}>
                 Gate
               </Button>
-              <Button
-                type="button"
-                variation={
-                  renameType === "building" ? "primary" : "secondary"
-                }
-                onClick={() => setRenameType("building")}
-              >
+              <Button type="button" variation={renameType === 'building' ? 'primary' : 'secondary'} onClick={() => setRenameType('building')}>
                 Building
               </Button>
             </div>
           </div>
 
           <div>
-            <label className="block mb-1 text-sm text-white/80">
-              Station Name
-            </label>
-            <Input
-              className="w-full"
-              placeholder={
-                renameType === "gate" ? "e.g. Gate 1" : "e.g. Main Lobby"
-              }
-              value={renameName}
-              onChange={(e) => setRenameName(e.target.value)}
-            />
-            <p className="text-xs text-white/60 mt-1">
-              For gates, names containing &quot;Gate&quot; will be treated as
-              entry/exit points in the system.
-            </p>
-            {renameError && (
-              <p className="text-xs text-red-400 mt-1">{renameError}</p>
-            )}
+            <label className="block mb-1 text-sm text-white/80">Station Name</label>
+            <Input className="w-full" placeholder={renameType === 'gate' ? 'e.g. Gate 1' : 'e.g. Main Lobby'} value={renameName} onChange={(e) => setRenameName(e.target.value)} />
+            <p className="text-xs text-white/60 mt-1">For gates, names containing &quot;Gate&quot; will be treated as entry/exit points in the system.</p>
+            {renameError && <p className="text-xs text-red-400 mt-1">{renameError}</p>}
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variation="secondary"
-              type="button"
-              onClick={() => setRenameModalOpen(false)}
-              disabled={renameSubmitting}
-            >
+            <Button variation="secondary" type="button" onClick={() => setRenameModalOpen(false)} disabled={renameSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={handleRenameStation}
-              disabled={renameSubmitting}
-            >
-              {renameSubmitting ? "Saving..." : "Save"}
+            <Button type="button" onClick={handleRenameStation} disabled={renameSubmitting}>
+              {renameSubmitting ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>

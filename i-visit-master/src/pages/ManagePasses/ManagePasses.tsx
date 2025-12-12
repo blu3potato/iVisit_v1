@@ -1,28 +1,37 @@
 // src/pages/ManagePasses/ManagePasses.tsx
-import { useEffect, useMemo, useState } from "react";
-import { useCookies } from "react-cookie";
+import { useEffect, useMemo, useState } from 'react';
+import { useCookies } from 'react-cookie';
 
-import DashboardLayout from "../../layouts/DashboardLayout";
-import Meta from "../../utils/Meta";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
-import Modal from "../../components/common/Modal";
-import ConfirmDialog from "../../components/common/ConfirmDialog";
-import { Table, Thead, Tbody, Tr, Th, Td } from "../../components/common/Table";
-import Select from "../../components/common/Select";
-import { useToast } from "../../contexts/ToastContext";
+import DashboardLayout from '../../layouts/DashboardLayout';
+import Meta from '../../utils/Meta';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import Modal from '../../components/common/Modal';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/common/Table';
+import Select from '../../components/common/Select';
+import { useToast } from '../../contexts/ToastContext';
 
 import {
-  getAllPasses, createPass, updatePassStatus,
-  updatePassMetadata, type VisitorPass, getPassLabel,
-  getAllStations, type Station,
-  listPassIncidents, type VisitorPassIncident,
+  getAllPasses,
+  createPass,
+  updatePassStatus,
+  updatePassMetadata,
+  type VisitorPass,
+  getPassLabel,
+  getAllStations,
+  type Station,
+  listPassIncidents,
+  type VisitorPassIncident,
   closePassIncident,
-} from "../../api/Index";
+} from '../../api/Index';
 
-import { readCardUID } from "../../hooks/readCard";
+import { readCardUID } from '../../hooks/readCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDungeon } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding as farBuilding } from '@fortawesome/free-regular-svg-icons';
 
-type StatusFilter = "all" | "available" | "in_use" | "lost" | "inactive";
+type StatusFilter = 'all' | 'available' | 'in_use' | 'lost' | 'inactive';
 
 interface ConfirmState {
   open: boolean;
@@ -34,13 +43,13 @@ interface ConfirmState {
 }
 
 export default function ManagePasses() {
-  Meta({ title: "Manage Visitor Passes - iVisit" });
-  
-  const { showToast } = useToast();
-  const [cookies] = useCookies(["role"]);
+  Meta({ title: 'Manage Visitor Passes - iVisit' });
 
-  const role = cookies.role as "admin" | "guard" | "support" | undefined;
-  const isAdmin = role === "admin";
+  const { showToast } = useToast();
+  const [cookies] = useCookies(['role']);
+
+  const role = cookies.role as 'admin' | 'guard' | 'support' | undefined;
+  const isAdmin = role === 'admin';
 
   const [passes, setPasses] = useState<VisitorPass[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
@@ -48,15 +57,14 @@ export default function ManagePasses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Add modal state
   const [addOpen, setAddOpen] = useState(false);
-  const [addLabel, setAddLabel] = useState(""); // displayCode
-  const [addUid, setAddUid] = useState(""); // RFID UID (passNumber)
-  const [addOriginStationId, setAddOriginStationId] =
-    useState<number | "">("");
+  const [addLabel, setAddLabel] = useState(''); // displayCode
+  const [addUid, setAddUid] = useState(''); // RFID UID (passNumber)
+  const [addOriginStationId, setAddOriginStationId] = useState<number | ''>('');
 
   // RFID state for Add
   const [rfidStatus, setRfidStatus] = useState<string | null>(null);
@@ -65,10 +73,9 @@ export default function ManagePasses() {
   // Edit modal state
   const [editOpen, setEditOpen] = useState(false);
   const [editPass, setEditPass] = useState<VisitorPass | null>(null);
-  const [editLabel, setEditLabel] = useState(""); // displayCode
-  const [editUid, setEditUid] = useState(""); // read-only UID
-  const [editOriginStationId, setEditOriginStationId] =
-    useState<number | "">("");
+  const [editLabel, setEditLabel] = useState(''); // displayCode
+  const [editUid, setEditUid] = useState(''); // read-only UID
+  const [editOriginStationId, setEditOriginStationId] = useState<number | ''>('');
 
   // Confirm dialog
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -90,10 +97,7 @@ export default function ManagePasses() {
         setLoading(true);
 
         // basic core data
-        const [passesData, stationsData] = await Promise.all([
-          getAllPasses(),
-          getAllStations(),
-        ]);
+        const [passesData, stationsData] = await Promise.all([getAllPasses(), getAllStations()]);
         setPasses(passesData);
         setStations(stationsData);
 
@@ -102,14 +106,14 @@ export default function ManagePasses() {
           const incidentsData = await listPassIncidents();
           setIncidents(incidentsData);
         } catch (e) {
-          console.warn("Failed to load pass incidents:", e);
+          console.warn('Failed to load pass incidents:', e);
           setIncidents([]);
         }
 
         setError(null);
       } catch (err: any) {
         console.error(err);
-        setError(err.message || "Failed to load visitor passes.");
+        setError(err.message || 'Failed to load visitor passes.');
       } finally {
         setLoading(false);
       }
@@ -118,9 +122,7 @@ export default function ManagePasses() {
   }, []);
 
   // Helper: stationId -> name
-  const getOriginNameById = (
-    id: number | "" | null | undefined
-  ): string | null => {
+  const getOriginNameById = (id: number | '' | null | undefined): string | null => {
     if (!id && id !== 0) return null;
     const found = stations.find((s) => s.id === id);
     return found?.name ?? null;
@@ -129,9 +131,7 @@ export default function ManagePasses() {
   // Helper: incident counts for a given pass
   const getIncidentCounts = (passId: number) => {
     const related = incidents.filter((i) => i.passId === passId);
-    const openCount = related.filter(
-      (i) => (i.status || "").toUpperCase() === "OPEN"
-    ).length;
+    const openCount = related.filter((i) => (i.status || '').toUpperCase() === 'OPEN').length;
     return { total: related.length, open: openCount };
   };
 
@@ -146,41 +146,27 @@ export default function ManagePasses() {
     const term = search.trim().toLowerCase();
 
     return passes.filter((p) => {
-      const status = (p.status || "").toLowerCase();
+      const status = (p.status || '').toLowerCase();
 
-      if (statusFilter === "available" && status !== "available") return false;
-      if (statusFilter === "in_use" && status !== "in_use") return false;
-      if (statusFilter === "lost" && status !== "lost") return false;
-      if (
-        statusFilter === "inactive" &&
-        status !== "inactive" &&
-        status !== "retired"
-      )
-        return false;
+      if (statusFilter === 'available' && status !== 'available') return false;
+      if (statusFilter === 'in_use' && status !== 'in_use') return false;
+      if (statusFilter === 'lost' && status !== 'lost') return false;
+      if (statusFilter === 'inactive' && status !== 'inactive' && status !== 'retired') return false;
 
       if (!term) return true;
 
       const label = getPassLabel(p);
-      const fields = [
-        label,
-        p.passNumber ?? "",
-        p.visitorPassID ?? "",
-        p.originLocation ?? "",
-      ];
+      const fields = [label, p.passNumber ?? '', p.visitorPassID ?? '', p.originLocation ?? ''];
 
       return fields.some((f) => f.toLowerCase().includes(term));
     });
   }, [passes, search, statusFilter]);
 
-  const lostCount = useMemo(
-    () =>
-      passes.filter((p) => (p.status || "").toLowerCase() === "lost").length,
-    [passes]
-  );
+  const lostCount = useMemo(() => passes.filter((p) => (p.status || '').toLowerCase() === 'lost').length, [passes]);
 
   const stationOptions = useMemo(
     () => [
-      { label: "None", value: "" },
+      { label: 'None', value: '' },
       ...stations.map((s) => ({
         label: s.name,
         value: String(s.id),
@@ -190,9 +176,9 @@ export default function ManagePasses() {
   );
 
   const openAddModal = () => {
-    setAddLabel("");
-    setAddUid("");
-    setAddOriginStationId("");
+    setAddLabel('');
+    setAddUid('');
+    setAddOriginStationId('');
     setRfidStatus(null);
     setRfidLoading(false);
     setAddOpen(true);
@@ -206,10 +192,8 @@ export default function ManagePasses() {
       const result = await readCardUID();
 
       if (!result.success || !result.uid) {
-        setRfidStatus(
-          result.message || "No card detected. Please tap a card again."
-        );
-        setAddUid("");
+        setRfidStatus(result.message || 'No card detected. Please tap a card again.');
+        setAddUid('');
         return;
       }
 
@@ -217,9 +201,9 @@ export default function ManagePasses() {
       setAddUid(uid);
       setRfidStatus(`Card detected. UID: ${uid}`);
     } catch (err: any) {
-      console.error("RFID read error (ManagePasses add):", err);
-      setRfidStatus(err?.message || "Failed to read RFID card.");
-      setAddUid("");
+      console.error('RFID read error (ManagePasses add):', err);
+      setRfidStatus(err?.message || 'Failed to read RFID card.');
+      setAddUid('');
     } finally {
       setRfidLoading(false);
     }
@@ -227,26 +211,26 @@ export default function ManagePasses() {
 
   const handleCreatePass = async () => {
     if (!addLabel.trim()) {
-      showToast("Please enter a pass label / number.", {
-        variant: "warning",
+      showToast('Please enter a pass label / number.', {
+        variant: 'warning',
       });
       return;
     }
 
     if (!addUid.trim()) {
-      showToast("Please tap a card to capture its UID.", {
-        variant: "warning",
+      showToast('Please tap a card to capture its UID.', {
+        variant: 'warning',
       });
       return;
     }
 
     try {
       // passNumber = RFID UID (hex)
-      const created = await createPass(addUid.trim().toUpperCase(), undefined, "AVAILABLE");
+      const created = await createPass(addUid.trim().toUpperCase(), undefined, 'AVAILABLE');
 
       // Origin location from station name (we still store human-readable name here)
       let originName: string | undefined;
-      if (addOriginStationId !== "") {
+      if (addOriginStationId !== '') {
         const resolved = getOriginNameById(addOriginStationId as number);
         originName = resolved || undefined;
       }
@@ -259,19 +243,19 @@ export default function ManagePasses() {
 
       await refreshPasses();
       setAddOpen(false);
-      showToast("Visitor pass created.", { variant: "success" });
+      showToast('Visitor pass created.', { variant: 'success' });
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || "Failed to create pass.", {
-        variant: "error",
+      showToast(err.message || 'Failed to create pass.', {
+        variant: 'error',
       });
     }
   };
 
   const openEditModal = (pass: VisitorPass) => {
     setEditPass(pass);
-    setEditLabel(pass.displayCode || pass.passNumber || "");
-    setEditUid(pass.passNumber || ""); // show UID, but don't edit
+    setEditLabel(pass.displayCode || pass.passNumber || '');
+    setEditUid(pass.passNumber || ''); // show UID, but don't edit
 
     // Map originLocation back to stationId if name matches
     if (pass.originLocation) {
@@ -279,10 +263,10 @@ export default function ManagePasses() {
       if (found) {
         setEditOriginStationId(found.id);
       } else {
-        setEditOriginStationId("");
+        setEditOriginStationId('');
       }
     } else {
-      setEditOriginStationId("");
+      setEditOriginStationId('');
     }
 
     setEditOpen(true);
@@ -293,7 +277,7 @@ export default function ManagePasses() {
 
     try {
       let originName: string | undefined;
-      if (editOriginStationId !== "") {
+      if (editOriginStationId !== '') {
         const resolved = getOriginNameById(editOriginStationId as number);
         originName = resolved || undefined;
       }
@@ -306,11 +290,11 @@ export default function ManagePasses() {
       await refreshPasses();
       setEditOpen(false);
       setEditPass(null);
-      showToast("Visitor pass updated.", { variant: "success" });
+      showToast('Visitor pass updated.', { variant: 'success' });
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || "Failed to update pass.", {
-        variant: "error",
+      showToast(err.message || 'Failed to update pass.', {
+        variant: 'error',
       });
     }
   };
@@ -318,9 +302,9 @@ export default function ManagePasses() {
   const handleStatusChange = async (pass: VisitorPass, newStatus: string) => {
     const normalized = newStatus.toUpperCase();
 
-    if (normalized === "IN_USE") {
-      showToast("IN_USE status is controlled by Guard check-in/out.", {
-        variant: "warning",
+    if (normalized === 'IN_USE') {
+      showToast('IN_USE status is controlled by Guard check-in/out.', {
+        variant: 'warning',
       });
       return;
     }
@@ -328,11 +312,11 @@ export default function ManagePasses() {
     try {
       await updatePassStatus(pass.passID, normalized);
       await refreshPasses();
-      showToast(`Pass set to ${normalized}.`, { variant: "success" });
+      showToast(`Pass set to ${normalized}.`, { variant: 'success' });
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || "Failed to update status.", {
-        variant: "error",
+      showToast(err.message || 'Failed to update status.', {
+        variant: 'error',
       });
     }
   };
@@ -342,14 +326,14 @@ export default function ManagePasses() {
 
     setConfirmState({
       open: true,
-      title: "Set Pass Inactive",
+      title: 'Set Pass Inactive',
       message: `Set pass "${label}" to INACTIVE? It will no longer be assignable but will remain in records.`,
-      confirmLabel: "Set Inactive",
-      cancelLabel: "Cancel",
+      confirmLabel: 'Set Inactive',
+      cancelLabel: 'Cancel',
       onConfirm: async () => {
-        await updatePassStatus(pass.passID, "INACTIVE");
+        await updatePassStatus(pass.passID, 'INACTIVE');
         await refreshPasses();
-        showToast("Pass set to INACTIVE.", { variant: "success" });
+        showToast('Pass set to INACTIVE.', { variant: 'success' });
       },
     });
   };
@@ -357,9 +341,7 @@ export default function ManagePasses() {
   if (!isAdmin) {
     return (
       <DashboardLayout>
-        <p className="text-center text-red-400 mt-8">
-          You do not have permission to access this page.
-        </p>
+        <p className="text-center text-red-400 mt-8">You do not have permission to access this page.</p>
       </DashboardLayout>
     );
   }
@@ -367,9 +349,7 @@ export default function ManagePasses() {
   if (loading) {
     return (
       <DashboardLayout>
-        <p className="text-gray-400 text-center mt-8">
-          Loading visitor passes...
-        </p>
+        <p className="text-gray-400 text-center mt-8">Loading visitor passes...</p>
       </DashboardLayout>
     );
   }
@@ -396,11 +376,7 @@ export default function ManagePasses() {
           {/* Status filter — native <select> */}
           <div className="flex items-center gap-2">
             <span className="text-slate-300 text-xs">Status:</span>
-            <select
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs md:w-40"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            >
+            <select className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs md:w-40" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
               <option value="all">All</option>
               <option value="available">Available</option>
               <option value="in_use">In Use</option>
@@ -410,11 +386,7 @@ export default function ManagePasses() {
           </div>
           {/* Search */}
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Input
-              className="text-dark-gray w-full md:w-56"
-              placeholder="Search label, UID, origin..."
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <Input className="text-dark-gray w-full md:w-56" placeholder="Search label, UID, origin..." onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           <Button className="md:ml-2" onClick={openAddModal}>
@@ -436,16 +408,15 @@ export default function ManagePasses() {
         </Thead>
         <Tbody>
           {filteredPasses.map((p) => {
-            const status = (p.status || "").toUpperCase();
+            const status = (p.status || '').toUpperCase();
             const label = getPassLabel(p);
-            const uidText = p.passNumber || p.visitorPassID || "—";
+            const uidText = p.passNumber || p.visitorPassID || '—';
 
-            let statusClass = "text-slate-300";
-            if (status === "AVAILABLE") statusClass = "text-green-400";
-            else if (status === "IN_USE") statusClass = "text-blue-400";
-            else if (status === "LOST") statusClass = "text-red-400";
-            else if (status === "INACTIVE" || status === "RETIRED")
-              statusClass = "text-yellow-400";
+            let statusClass = 'text-slate-300';
+            if (status === 'AVAILABLE') statusClass = 'text-green-400';
+            else if (status === 'IN_USE') statusClass = 'text-blue-400';
+            else if (status === 'LOST') statusClass = 'text-red-400';
+            else if (status === 'INACTIVE' || status === 'RETIRED') statusClass = 'text-yellow-400';
 
             const { total, open } = getIncidentCounts(p.passID);
 
@@ -456,16 +427,31 @@ export default function ManagePasses() {
                 <Td>
                   <span className={statusClass}>{status}</span>
                 </Td>
-                <Td>{p.originLocation ?? "N/A"}</Td>
+                <Td>
+                  {p.originLocation ? (
+                    (() => {
+                      const loc = (p.originLocation || '').trim();
+                      const matched = stations.find((s) => (s.name || '').trim().toLowerCase() === loc.toLowerCase());
+                      const stationType = (matched?.stationType || '').toLowerCase();
+                      const looksLikeGate = loc.toLowerCase().includes('gate');
+                      const icon = stationType === 'gate' || (!matched && looksLikeGate) ? faDungeon : farBuilding;
+
+                      return (
+                        <span className="inline-flex items-center gap-2">
+                          <FontAwesomeIcon icon={icon} fixedWidth />
+                          <span>{p.originLocation}</span>
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    <span className="text-slate-400">N/A</span>
+                  )}
+                </Td>
                 <Td>
                   {total === 0 ? (
                     <span className="text-xs text-slate-400">None</span>
                   ) : (
-                    <button
-                      type="button"
-                      className="text-xs underline text-slate-200 hover:text-yellow-300"
-                      onClick={() => openIncidentModalForPass(p)}
-                    >
+                    <button type="button" className="text-xs underline text-slate-200 hover:text-yellow-300" onClick={() => openIncidentModalForPass(p)}>
                       {open > 0 ? (
                         <>
                           <span className="font-semibold">{open} open</span>
@@ -482,41 +468,25 @@ export default function ManagePasses() {
                 </Td>
                 <Td>
                   <div className="flex justify-end gap-2">
-                    {status !== "IN_USE" && (
-                      <Button
-                        variation="secondary"
-                        className="text-xs px-2 py-1"
-                        onClick={() => openEditModal(p)}
-                      >
+                    {status !== 'IN_USE' && (
+                      <Button variation="secondary" className="text-xs px-2 py-1" onClick={() => openEditModal(p)}>
                         Edit
                       </Button>
                     )}
 
                     {/* Status actions */}
-                    {status !== "IN_USE" && status !== "AVAILABLE" && (
-                      <Button
-                        variation="secondary"
-                        className="text-xs px-2 py-1"
-                        onClick={() => handleStatusChange(p, "AVAILABLE")}
-                      >
+                    {status !== 'IN_USE' && status !== 'AVAILABLE' && (
+                      <Button variation="secondary" className="text-xs px-2 py-1" onClick={() => handleStatusChange(p, 'AVAILABLE')}>
                         Set Available
                       </Button>
                     )}
 
-                    {status === "AVAILABLE" && (
+                    {status === 'AVAILABLE' && (
                       <>
-                        <Button
-                          variation="secondary"
-                          className="text-xs px-2 py-1"
-                          onClick={() => handleStatusChange(p, "LOST")}
-                        >
+                        <Button variation="secondary" className="text-xs px-2 py-1" onClick={() => handleStatusChange(p, 'LOST')}>
                           Mark Lost
                         </Button>
-                        <Button
-                          variation="secondary"
-                          className="text-xs px-2 py-1"
-                          onClick={() => handleSetInactive(p)}
-                        >
+                        <Button variation="secondary" className="text-xs px-2 py-1" onClick={() => handleSetInactive(p)}>
                           Set Inactive
                         </Button>
                       </>
@@ -530,64 +500,36 @@ export default function ManagePasses() {
       </Table>
 
       {/* Add Pass Modal */}
-      <Modal
-        isOpen={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Add Visitor Pass"
-      >
+      <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title="Add Visitor Pass">
         <div className="flex flex-col gap-3 text-white">
           <div>
             <p className="text-sm mb-1">Label / Printed Code</p>
-            <Input
-              placeholder="e.g. 001, A-03"
-              value={addLabel}
-              onChange={(e) => setAddLabel(e.target.value)}
-            />
+            <Input placeholder="e.g. 001, A-03" value={addLabel} onChange={(e) => setAddLabel(e.target.value)} />
           </div>
 
           <div>
             <p className="text-sm mb-1">
               Card UID (hex)
-              <span className="text-[10px] text-slate-400 ml-1">
-                (tap card to fill)
-              </span>
+              <span className="text-[10px] text-slate-400 ml-1">(tap card to fill)</span>
             </p>
             <div className="flex gap-2">
-              <Input
-                placeholder="Tap a card to capture UID"
-                value={addUid}
-                readOnly
-              />
-              <Button
-                type="button"
-                variation="secondary"
-                className="text-xs px-3 py-1 whitespace-nowrap"
-                disabled={rfidLoading}
-                onClick={handleReadRfidForAdd}
-              >
-                {rfidLoading ? "Reading..." : "Tap card"}
+              <Input placeholder="Tap a card to capture UID" value={addUid} readOnly />
+              <Button type="button" variation="secondary" className="text-xs px-3 py-1 whitespace-nowrap" disabled={rfidLoading} onClick={handleReadRfidForAdd}>
+                {rfidLoading ? 'Reading...' : 'Tap card'}
               </Button>
             </div>
-            {rfidStatus && (
-              <p className="text-[11px] text-slate-400 mt-1">{rfidStatus}</p>
-            )}
+            {rfidStatus && <p className="text-[11px] text-slate-400 mt-1">{rfidStatus}</p>}
           </div>
 
           <div>
             <p className="text-sm mb-1">Origin Station (optional)</p>
             <Select
               id="origin-station-add"
-              value={
-                addOriginStationId === ""
-                  ? ""
-                  : String(addOriginStationId)
-              }
+              value={addOriginStationId === '' ? '' : String(addOriginStationId)}
               options={stationOptions}
               placeholder="Select origin station"
               onChange={(value) => {
-                setAddOriginStationId(
-                  value === "" ? "" : Number(value)
-                );
+                setAddOriginStationId(value === '' ? '' : Number(value));
               }}
             />
           </div>
@@ -613,16 +555,12 @@ export default function ManagePasses() {
         {editPass && (
           <div className="flex flex-col gap-3 text-white">
             <p className="text-xs text-slate-400">
-              Internal ID: #{editPass.passID} · Current status:{" "}
-              {(editPass.status || "").toUpperCase()}
+              Internal ID: #{editPass.passID} · Current status: {(editPass.status || '').toUpperCase()}
             </p>
 
             <div>
               <p className="text-sm mb-1">Label / Printed Code</p>
-              <Input
-                value={editLabel}
-                onChange={(e) => setEditLabel(e.target.value)}
-              />
+              <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} />
             </div>
 
             <div>
@@ -634,17 +572,11 @@ export default function ManagePasses() {
               <p className="text-sm mb-1">Origin Station</p>
               <Select
                 id="origin-station-edit"
-                value={
-                  editOriginStationId === ""
-                    ? ""
-                    : String(editOriginStationId)
-                }
+                value={editOriginStationId === '' ? '' : String(editOriginStationId)}
                 options={stationOptions}
                 placeholder="Select origin station"
                 onChange={(value) => {
-                  setEditOriginStationId(
-                    value === "" ? "" : Number(value)
-                  );
+                  setEditOriginStationId(value === '' ? '' : Number(value));
                 }}
               />
             </div>
@@ -672,59 +604,36 @@ export default function ManagePasses() {
           setIncidentModalPass(null);
           setIncidentModalItems([]);
         }}
-        title={
-          incidentModalPass
-            ? `Incidents for ${getPassLabel(incidentModalPass)}`
-            : "Pass Incidents"
-        }
+        title={incidentModalPass ? `Incidents for ${getPassLabel(incidentModalPass)}` : 'Pass Incidents'}
       >
         <div className="flex flex-col gap-3 text-white text-sm max-h-80 overflow-y-auto">
           {incidentModalItems.length === 0 ? (
-            <p className="text-slate-300 text-xs">
-              No incidents recorded for this pass.
-            </p>
+            <p className="text-slate-300 text-xs">No incidents recorded for this pass.</p>
           ) : (
             <ul className="space-y-3">
               {incidentModalItems.map((inc) => (
                 <div key={inc.incidentId} className="border-b border-white/10 pb-2 mb-2">
                   <p className="text-sm">
                     <span className="font-semibold">{inc.incidentType}</span>
-                    {" — "}
-                    <span className={
-                      inc.status === "OPEN"
-                        ? "text-red-400"
-                        : "text-green-400"
-                    }>
-                      {inc.status}
-                    </span>
+                    {' — '}
+                    <span className={inc.status === 'OPEN' ? 'text-red-400' : 'text-green-400'}>{inc.status}</span>
                   </p>
 
-                  {inc.description && (
-                    <p className="text-xs text-slate-300 mt-1">{inc.description}</p>
-                  )}
+                  {inc.description && <p className="text-xs text-slate-300 mt-1">{inc.description}</p>}
 
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Reported: {new Date(inc.reportedAt).toLocaleString()}
-                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">Reported: {new Date(inc.reportedAt).toLocaleString()}</p>
 
-                  {inc.status === "CLOSED" && inc.resolvedAt && (
-                    <p className="text-[10px] text-green-400 mt-1">
-                      Closed: {new Date(inc.resolvedAt).toLocaleString()}
-                    </p>
-                  )}
+                  {inc.status === 'CLOSED' && inc.resolvedAt && <p className="text-[10px] text-green-400 mt-1">Closed: {new Date(inc.resolvedAt).toLocaleString()}</p>}
 
                   {/* Close button for OPEN incidents */}
-                  {inc.status === "OPEN" && (
+                  {inc.status === 'OPEN' && (
                     <div className="mt-2">
                       <Button
                         variation="secondary"
                         className="text-xs px-2 py-1"
                         onClick={async () => {
                           try {
-                            const notes = prompt(
-                              "Enter resolution notes (optional):",
-                              ""
-                            ) || undefined;
+                            const notes = prompt('Enter resolution notes (optional):', '') || undefined;
 
                             await closePassIncident(inc.incidentId, notes);
 
@@ -733,15 +642,13 @@ export default function ManagePasses() {
                             setIncidents(updated);
 
                             // Refresh modal contents
-                            const filtered = updated.filter(
-                              (i) => i.passId === incidentModalPass?.passID
-                            );
+                            const filtered = updated.filter((i) => i.passId === incidentModalPass?.passID);
                             setIncidentModalItems(filtered);
 
-                            showToast("Incident closed.", { variant: "success" });
+                            showToast('Incident closed.', { variant: 'success' });
                           } catch (err: any) {
-                            showToast(err.message || "Failed to close incident.", {
-                              variant: "error",
+                            showToast(err.message || 'Failed to close incident.', {
+                              variant: 'error',
                             });
                           }
                         }}
@@ -770,7 +677,6 @@ export default function ManagePasses() {
         </div>
       </Modal>
 
-
       {/* Confirm Dialog */}
       {confirmState && (
         <ConfirmDialog
@@ -782,9 +688,7 @@ export default function ManagePasses() {
           loading={confirmLoading}
           onCancel={() => {
             if (confirmLoading) return;
-            setConfirmState((prev) =>
-              prev ? { ...prev, open: false } : prev
-            );
+            setConfirmState((prev) => (prev ? { ...prev, open: false } : prev));
           }}
           onConfirm={async () => {
             if (!confirmState?.onConfirm) return;
@@ -793,9 +697,7 @@ export default function ManagePasses() {
               await confirmState.onConfirm();
             } finally {
               setConfirmLoading(false);
-              setConfirmState((prev) =>
-                prev ? { ...prev, open: false } : prev
-              );
+              setConfirmState((prev) => (prev ? { ...prev, open: false } : prev));
             }
           }}
         />

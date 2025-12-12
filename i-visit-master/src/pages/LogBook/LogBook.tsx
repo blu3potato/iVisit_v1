@@ -1,19 +1,19 @@
 // src/pages/LogBook/LogBook.tsx
-import { useEffect, useState, useMemo } from "react";
-import Button from "../../components/common/Button";
-import DashboardLayout from "../../layouts/DashboardLayout";
-import Meta from "../../utils/Meta";
-import { Table, Thead, Tbody, Tr, Th, Td } from "../../components/common/Table";
-import Input from "../../components/common/Input";
-import Modal from "../../components/common/Modal";
-import PaginationControls from "../../components/common/PaginationControls";
+import { useEffect, useState, useMemo } from 'react';
+import Button from '../../components/common/Button';
+import DashboardLayout from '../../layouts/DashboardLayout';
+import Meta from '../../utils/Meta';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDungeon } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding as farBuilding } from '@fortawesome/free-regular-svg-icons';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/common/Table';
+import Input from '../../components/common/Input';
+import Modal from '../../components/common/Modal';
+import PaginationControls from '../../components/common/PaginationControls';
 
-import {
-  getAllLogs, getActiveLogs, type VisitorLogDTO,
-  getAllStations, type Station,
-} from "../../api/Index";
+import { getAllLogs, getActiveLogs, type VisitorLogDTO, getAllStations, type Station } from '../../api/Index';
 
-import { sortGateAware } from "../../utils/locationSort";
+import { sortGateAware } from '../../utils/locationSort';
 
 interface LogStats {
   active: number;
@@ -25,21 +25,20 @@ interface LogStats {
 }
 
 export default function LogBook() {
-  Meta({ title: "Log Book - iVisit" });
+  Meta({ title: 'Log Book - iVisit' });
 
   const [data, setData] = useState<VisitorLogDTO[]>([]);
   const [activeLogIds, setActiveLogIds] = useState<number[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] =
-    useState<"all" | "active" | "inactive">("all");
-  const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
   const [stations, setStations] = useState<Station[]>([]);
 
   // Client-side pagination
-  const [page, setPage] = useState(0);      // 0-based
+  const [page, setPage] = useState(0); // 0-based
   const [pageSize, setPageSize] = useState(25);
 
   // FETCH DATA
@@ -47,11 +46,7 @@ export default function LogBook() {
     async function fetchLogs() {
       try {
         setLoading(true);
-        const [allLogs, activeLogs, stationsData] = await Promise.all([
-          getAllLogs(),
-          getActiveLogs(),
-          getAllStations(),
-        ]);
+        const [allLogs, activeLogs, stationsData] = await Promise.all([getAllLogs(), getActiveLogs(), getAllStations()]);
 
         setData(allLogs);
         setActiveLogIds(activeLogs.map((l) => l.visitorLogID));
@@ -59,7 +54,7 @@ export default function LogBook() {
         setError(null);
       } catch (err) {
         console.error(err);
-        setError("Failed to load visitor logs.");
+        setError('Failed to load visitor logs.');
       } finally {
         setLoading(false);
       }
@@ -74,9 +69,7 @@ export default function LogBook() {
   const locationOptions = useMemo(() => {
     if (!stations.length) return [];
 
-    const names = stations
-      .map((s) => (s.name || "").trim())
-      .filter((n) => n && n !== "N/A");
+    const names = stations.map((s) => (s.name || '').trim()).filter((n) => n && n !== 'N/A');
 
     const unique = Array.from(new Set(names));
 
@@ -89,30 +82,21 @@ export default function LogBook() {
 
     return data.filter((e) => {
       const logIsActive = isActive(e.visitorLogID);
-      const location = (e.location || "").trim().toLowerCase();
+      const location = (e.location || '').trim().toLowerCase();
 
       // 1) Status filter
-      if (statusFilter === "active" && !logIsActive) return false;
-      if (statusFilter === "inactive" && logIsActive) return false;
+      if (statusFilter === 'active' && !logIsActive) return false;
+      if (statusFilter === 'inactive' && logIsActive) return false;
 
       // 2) Location filter
-      if (locationFilter !== "all") {
+      if (locationFilter !== 'all') {
         if (!location || location !== locationFilter.trim().toLowerCase()) return false;
       }
 
       // 3) Text search
       if (!term) return true;
 
-      const fields = [
-        e.fullName ?? "",
-        e.idType ?? "",
-        e.passNo ?? "",
-        e.location ?? "",
-        e.purposeOfVisit ?? "",
-        e.loggedBy ?? "",
-        e.date ?? "",
-        e.time ?? "",
-      ];
+      const fields = [e.fullName ?? '', e.idType ?? '', e.passNo ?? '', e.location ?? '', e.purposeOfVisit ?? '', e.loggedBy ?? '', e.date ?? '', e.time ?? ''];
 
       return fields.some((field) => field.toLowerCase().includes(term));
     });
@@ -120,15 +104,11 @@ export default function LogBook() {
 
   // PAGINATION DERIVED FROM FILTERED LOGS
   const totalElements = filteredLogs.length;
-  const totalPages =
-    totalElements === 0 ? 0 : Math.ceil(totalElements / pageSize);
+  const totalPages = totalElements === 0 ? 0 : Math.ceil(totalElements / pageSize);
 
   const currentPage = totalPages === 0 ? 0 : Math.min(page, totalPages - 1);
 
-  const pagedLogs = filteredLogs.slice(
-    currentPage * pageSize,
-    currentPage * pageSize + pageSize
-  );
+  const pagedLogs = filteredLogs.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
 
   // STATS
   const stats = useMemo<LogStats | null>(() => {
@@ -137,33 +117,27 @@ export default function LogBook() {
     const today = new Date().toISOString().slice(0, 10);
 
     const todayLogs = data.filter((d) => d.date === today);
-    const todayActiveLogs = todayLogs.filter((d) =>
-      activeLogIds.includes(d.visitorLogID)
-    );
+    const todayActiveLogs = todayLogs.filter((d) => activeLogIds.includes(d.visitorLogID));
 
     const uniqueToday = new Set(todayLogs.map((d) => d.fullName)).size;
     const active = todayActiveLogs.length;
 
     const locationCount: Record<string, number> = {};
     todayLogs.forEach((d) => {
-      const loc = d.location || "Unknown";
+      const loc = d.location || 'Unknown';
       locationCount[loc] = (locationCount[loc] || 0) + 1;
     });
-    const frequentBuilding = Object.entries(locationCount).sort(
-      (a, b) => b[1] - a[1]
-    )[0]?.[0];
+    const frequentBuilding = Object.entries(locationCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
     const gateCount: Record<string, number> = {};
     todayLogs.forEach((d) => {
-      const loc = (d.location || "").toLowerCase();
-      if (loc.includes("gate")) {
-        const key = d.location || "Unknown gate";
+      const loc = (d.location || '').toLowerCase();
+      if (loc.includes('gate')) {
+        const key = d.location || 'Unknown gate';
         gateCount[key] = (gateCount[key] || 0) + 1;
       }
     });
-    const highestGate = Object.entries(gateCount).sort(
-      (a, b) => b[1] - a[1]
-    )[0]?.[0];
+    const highestGate = Object.entries(gateCount).sort((a, b) => b[1] - a[1])[0]?.[0];
 
     // "week" and "month" are based on all distinct names in data
     const uniqueWeek = new Set(data.map((d) => d.fullName)).size;
@@ -172,8 +146,8 @@ export default function LogBook() {
     return {
       active,
       uniqueToday,
-      frequentBuilding: frequentBuilding || "N/A",
-      highestGate: highestGate || "N/A",
+      frequentBuilding: frequentBuilding || 'N/A',
+      highestGate: highestGate || 'N/A',
       uniqueWeek,
       uniqueMonth,
     };
@@ -211,7 +185,7 @@ export default function LogBook() {
                 className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs"
                 value={statusFilter}
                 onChange={(e) => {
-                  setStatusFilter(e.target.value as "all" | "active" | "inactive");
+                  setStatusFilter(e.target.value as 'all' | 'active' | 'inactive');
                   setPage(0);
                 }}
               >
@@ -252,10 +226,7 @@ export default function LogBook() {
                 setPage(0);
               }}
             />
-            <Button
-              className="min-w-[110px]"
-              onClick={() => setIsModalOpen(true)}
-            >
+            <Button className="min-w-[110px]" onClick={() => setIsModalOpen(true)}>
               Statistics
             </Button>
           </div>
@@ -278,25 +249,45 @@ export default function LogBook() {
         </Thead>
         <Tbody>
           {pagedLogs.map((row, i) => {
-            const status = isActive(row.visitorLogID) ? "Active" : "Inactive";
+            const status = isActive(row.visitorLogID) ? 'Active' : 'Inactive';
+
+            const locationName = (row.location || '').trim();
+            let locationIcon: any = null;
+
+            if (locationName) {
+              const matched = stations.find((s) => (s.name || '').trim().toLowerCase() === locationName.toLowerCase());
+
+              const stationType = (matched?.stationType || '').toLowerCase();
+
+              const looksLikeGate = locationName.toLowerCase().includes('gate');
+
+              if (stationType === 'gate' || (!matched && looksLikeGate)) {
+                locationIcon = faDungeon;
+              } else if (stationType === 'building' || matched) {
+                locationIcon = farBuilding;
+              } else if (!matched) {
+                // fallback: treat non-gate as building
+                locationIcon = farBuilding;
+              }
+            }
+
             return (
               <Tr key={i}>
                 <Td>{row.fullName}</Td>
                 <Td>{row.idType}</Td>
                 <Td>{row.passNo}</Td>
-                <Td>{row.location}</Td>
+                <Td>
+                  <span className="inline-flex items-center gap-2">
+                    {locationIcon && <FontAwesomeIcon icon={locationIcon} fixedWidth />}
+                    <span>{row.location}</span>
+                  </span>
+                </Td>
                 <Td>{row.purposeOfVisit}</Td>
                 <Td>{row.loggedBy}</Td>
                 <Td>{row.date}</Td>
                 <Td>{row.time}</Td>
                 <Td>
-                  <span
-                    className={
-                      status === "Active" ? "text-green-400" : "text-red-400"
-                    }
-                  >
-                    {status}
-                  </span>
+                  <span className={status === 'Active' ? 'text-green-400' : 'text-red-400'}>{status}</span>
                 </Td>
               </Tr>
             );
@@ -316,11 +307,7 @@ export default function LogBook() {
         }}
       />
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Statistics"
-      >
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Statistics">
         {data.length > 0 && stats ? (
           <div className="space-y-4">
             <div>
